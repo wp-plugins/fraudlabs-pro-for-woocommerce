@@ -3,26 +3,44 @@
  * Plugin Name: FraudLabs Pro for WooCommerce
  * Plugin URI: http://www.fraudlabspro.com
  * Description: This plugin is an add-on for WooCommerce plugin that help you to screen your order transaction, such as credit card transaction, for online fraud.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: FraudLabs Pro
  * Author URI: http://www.fraudlabspro.com
  */
+
+if(!defined('ABSPATH')){
+	exit;
+}
+
 class FraudLabsPro_WooCommerce {
-	private $plugin_name, $table_name;
+	private $plugin_name;
+	private $domain = 'fraudlabs-pro-woocommerce';
 
 	public function __construct() {
-		global $wpdb;
-		$this->table_name = $wpdb->prefix . 'woocommerce_fraudlabspro';
-		$this->plugin_name = basename(dirname(__FILE__));
-		add_action('admin_menu', array(&$this, 'admin_page'));
-		add_action('woocommerce_checkout_order_processed', array(&$this, 'screen_order'));
-		add_action('woocommerce_admin_order_data_after_billing_address', array(&$this, 'render_fraud_report'));
+		add_action('admin_menu', array($this, 'admin_page'));
+		add_action('woocommerce_checkout_order_processed', array($this, 'screen_order'));
+		add_action('woocommerce_admin_order_data_after_billing_address', array($this, 'render_fraud_report'));
+		add_action( 'admin_notices', array($this, 'admin_notifications'));
 	}
 
 	private function fix_case($s) {
 		$s = ucwords(strtolower($s));
 		$s = preg_replace_callback("/( [ a-zA-Z]{1}')([a-zA-Z0-9]{1})/s", create_function('$matches', 'return $matches[1].strtoupper($matches[2]);') , $s);
 		return $s;
+	}
+
+	public function admin_notifications() {
+		$apiKey = get_option('woo_fraudlabspro_api_key');
+
+		if(!$apiKey) {
+			?>
+			<div id="message" class="error">
+				<p>
+					<?php echo __('FraudLabs Pro setup is not complete. Please go to <a href="' . admin_url('/admin.php?page=woo-fraudlabs-pro') . '">setting page</a> to enter your API key.', $this->domain); ?>
+				</p>
+			</div>
+			<?php
+		}
 	}
 
 	public function admin_options() {
@@ -35,20 +53,23 @@ class FraudLabsPro_WooCommerce {
 
 			echo '
 			<div class="wrap">
-				<h2>FraudLabs Pro for WooCommerce</h2>
-				<p>&nbsp;</p>';
+				<h2>' . __('FraudLabs Pro for WooCommerce', $this->domain) . '</h2>';
 			if (isset($_POST['save'])) {
 				if (!preg_match('/^[0-9]+$/', $riskScore)) {
 					echo '<p style="color:#cc0000">Please provide a valid risk score.</p>';
 				}elseif (!empty($testIP) && !filter_var($testIP, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-					echo '<p style="color:#cc0000">Please provide a valid test IP.</p>';
+					echo '<p style="color:#cc0000">' . __('Please provide a valid test IP.', $this->domain) . '</p>';
 				}else {
 					update_option('woo_fraudlabspro_enabled', $enabled);
 					update_option('woo_fraudlabspro_api_key', $apiKey);
 					update_option('woo_fraudlabspro_score', $riskScore);
 					update_option('woo_fraudlabspro_message', $message);
 					update_option('woo_fraudlabspro_test_ip', $testIP);
-					echo '<p style="color:#666600">Changes have been successfully saved.</p>';
+
+					echo '
+					<div class="updated settings-error">
+						<p><strong>' . __('Changes have been successfully saved.', $this->domain) . '</strong></p>
+					</div>';
 				}
 			}
 			echo '
@@ -56,37 +77,35 @@ class FraudLabsPro_WooCommerce {
 				<input type="hidden" name="save" value="true" />
 				<p>
 					<input type="checkbox" name="enabled" id="flpEnabled"' . (($enabled) ? ' checked' : '') . '>
-					<label for="flpEnabled">Enabled</label>
+					<label for="flpEnabled">' . __('Enabled', $this->domain) . '</label>
 				</p>
 				<p>
-					<label style="width:100px;display:inline-block"><b>API Key: </b></label>
+					<label style="width:100px;display:inline-block"><b>' . __('API Key', $this->domain) . ': </b></label>
 					<input type="text" name="apiKey" value="' . $apiKey . '" maxlength="32" size="50" />
-					<div style="font-size:11px;color:#535353">You can register for a free license key at <a href="http://www.fraudlabspro.com/sign-up" target="_blank">http://www.fraudlabspro.com/sign-up</a> if you do not have one.</div>
+					<div style="font-size:11px;color:#535353">' . __('You can register for a free license key at <a href="http://www.fraudlabspro.com/sign-up" target="_blank">http://www.fraudlabspro.com/sign-up</a> if you do not have one.', $this->domain) . '</div>
 				</p>
 				<p>
-					<label style="width:100px;display:inline-block"><b>Risk Score: </b></label>
+					<label style="width:100px;display:inline-block"><b>' . __('Risk Score', $this->domain) . ': </b></label>
 					<input type="text" name="riskScore" value="' . $riskScore . '" maxlength="2" size="5" />
-					<div style="font-size:11px;color:#535353">Reject the transaction if the calculated risk score higher than this value.</div>
+					<div style="font-size:11px;color:#535353">' . __('Reject the transaction if the calculated risk score higher than this value.', $this->domain) . '</div>
 				</p>
 				<p>
-					<label style="width:100px;display:inline-block"><b>Message: </b></label>
+					<label style="width:100px;display:inline-block"><b>' . __('Message', $this->domain) . ': </b></label>
 					<input type="text" name="message" value="' . $message . '" maxlength="200" size="60" />
-					<div style="font-size:11px;color:#535353">Display this message whenever transaction is marked as fraud.</div>
+					<div style="font-size:11px;color:#535353">' . __('Display this message whenever transaction is marked as fraud.', $this->domain) . '</div>
 				</p>
 				<p>
-					<label style="width:100px;display:inline-block"><b>Test IP: </b></label>
+					<label style="width:100px;display:inline-block"><b>' . __('Test IP', $this->domain) . ': </b></label>
 					<input type="text" name="testIP" value="' . $testIP . '" maxlength="15" size="15" />
-					<div style="font-size:11px;color:#535353">Simulate visitor IP. Clear this value for production run.</div>
+					<div style="font-size:11px;color:#535353">' . __('Simulate visitor IP. Clear this value for production run.', $this->domain) . '</div>
 				</p>
-				<p>
-					<input type="submit" value="Save Settings" />
-				</p>
+				<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="' . __('Save Changes', $this->domain) . '"  /></p>
 			</div>';
 		}
 	}
 
 	public function screen_order($order_id) {
-		global $wpdb, $woocommerce;
+		global $woocommerce;
 
 		$order = new WC_Order($order_id);
 		$items = $order->get_items();
@@ -137,60 +156,61 @@ class FraudLabsPro_WooCommerce {
 		$url = 'https://api.fraudlabspro.com/v1/order/screen?' . http_build_query($request);
 		for ($i = 0; $i < 3; $i++) {
 			if (is_null($json = json_decode(@file_get_contents($url))) === false) {
-				$wpdb->insert($this->table_name, array('order_id' => $order_id,
-						'is_country_match' => $json->is_country_match,
-						'is_high_risk_country' => $json->is_high_risk_country,
-						'distance_in_km' => $json->distance_in_km,
-						'distance_in_mile' => $json->distance_in_mile,
-						'ip_address' => (get_option('woo_fraudlabspro_test_ip')) ? get_option('woo_fraudlabspro_test_ip') : $_SERVER['REMOTE_ADDR'],
-						'ip_country' => $json->ip_country,
-						'ip_region' => $json->ip_region,
-						'ip_city' => $json->ip_city,
-						'ip_continent' => $json->ip_continent,
-						'ip_latitude' => $json->ip_latitude,
-						'ip_longitude' => $json->ip_longitude,
-						'ip_timezone' => $json->ip_timezone,
-						'ip_elevation' => $json->ip_elevation,
-						'ip_domain' => $json->ip_domain,
-						'ip_mobile_mnc' => $json->ip_mobile_mnc,
-						'ip_mobile_mcc' => $json->ip_mobile_mcc,
-						'ip_mobile_brand' => $json->ip_mobile_brand,
-						'ip_netspeed' => $json->ip_netspeed,
-						'ip_isp_name' => $json->ip_isp_name,
-						'ip_usage_type' => $json->ip_usage_type,
-						'is_free_email' => $json->is_free_email,
-						'is_new_domain_name' => $json->is_new_domain_name,
-						'is_proxy_ip_address' => $json->is_proxy_ip_address,
-						'is_bin_found' => $json->is_bin_found,
-						'is_bin_country_match' => $json->is_bin_country_match,
-						'is_bin_name_match' => $json->is_bin_name_match,
-						'is_bin_phone_match' => $json->is_bin_phone_match,
-						'is_bin_prepaid' => $json->is_bin_prepaid,
-						'is_address_ship_forward' => $json->is_address_ship_forward,
-						'is_bill_ship_city_match' => $json->is_bill_ship_city_match,
-						'is_bill_ship_state_match' => $json->is_bill_ship_state_match,
-						'is_bill_ship_country_match' => $json->is_bill_ship_country_match,
-						'is_bill_ship_postal_match' => $json->is_bill_ship_postal_match,
-						'is_ip_blacklist' => $json->is_ip_blacklist,
-						'is_email_blacklist' => $json->is_email_blacklist,
-						'is_credit_card_blacklist' => $json->is_credit_card_blacklist,
-						'is_device_blacklist' => $json->is_device_blacklist,
-						'is_user_blacklist' => $json->is_user_blacklist,
-						'fraudlabspro_score' => $json->fraudlabspro_score,
-						'fraudlabspro_distribution' => $json->fraudlabspro_distribution,
-						'fraudlabspro_status' => $json->fraudlabspro_status,
-						'fraudlabspro_id' => $json->fraudlabspro_id,
-						'fraudlabspro_error_code' => $json->fraudlabspro_error_code,
-						'fraudlabspro_message' => $json->fraudlabspro_message,
-						'fraudlabspro_credits' => $json->fraudlabspro_credits,
-						'api_key' => get_option('woo_fraudlabspro_api_key')
-						));
+				add_post_meta($order_id, '_fraudlabspro', json_encode(array(
+					'order_id' => $order_id,
+					'is_country_match' => $json->is_country_match,
+					'is_high_risk_country' => $json->is_high_risk_country,
+					'distance_in_km' => $json->distance_in_km,
+					'distance_in_mile' => $json->distance_in_mile,
+					'ip_address' => (get_option('woo_fraudlabspro_test_ip')) ? get_option('woo_fraudlabspro_test_ip') : $_SERVER['REMOTE_ADDR'],
+					'ip_country' => $json->ip_country,
+					'ip_region' => $json->ip_region,
+					'ip_city' => $json->ip_city,
+					'ip_continent' => $json->ip_continent,
+					'ip_latitude' => $json->ip_latitude,
+					'ip_longitude' => $json->ip_longitude,
+					'ip_timezone' => $json->ip_timezone,
+					'ip_elevation' => $json->ip_elevation,
+					'ip_domain' => $json->ip_domain,
+					'ip_mobile_mnc' => $json->ip_mobile_mnc,
+					'ip_mobile_mcc' => $json->ip_mobile_mcc,
+					'ip_mobile_brand' => $json->ip_mobile_brand,
+					'ip_netspeed' => $json->ip_netspeed,
+					'ip_isp_name' => $json->ip_isp_name,
+					'ip_usage_type' => $json->ip_usage_type,
+					'is_free_email' => $json->is_free_email,
+					'is_new_domain_name' => $json->is_new_domain_name,
+					'is_proxy_ip_address' => $json->is_proxy_ip_address,
+					'is_bin_found' => $json->is_bin_found,
+					'is_bin_country_match' => $json->is_bin_country_match,
+					'is_bin_name_match' => $json->is_bin_name_match,
+					'is_bin_phone_match' => $json->is_bin_phone_match,
+					'is_bin_prepaid' => $json->is_bin_prepaid,
+					'is_address_ship_forward' => $json->is_address_ship_forward,
+					'is_bill_ship_city_match' => $json->is_bill_ship_city_match,
+					'is_bill_ship_state_match' => $json->is_bill_ship_state_match,
+					'is_bill_ship_country_match' => $json->is_bill_ship_country_match,
+					'is_bill_ship_postal_match' => $json->is_bill_ship_postal_match,
+					'is_ip_blacklist' => $json->is_ip_blacklist,
+					'is_email_blacklist' => $json->is_email_blacklist,
+					'is_credit_card_blacklist' => $json->is_credit_card_blacklist,
+					'is_device_blacklist' => $json->is_device_blacklist,
+					'is_user_blacklist' => $json->is_user_blacklist,
+					'fraudlabspro_score' => $json->fraudlabspro_score,
+					'fraudlabspro_distribution' => $json->fraudlabspro_distribution,
+					'fraudlabspro_status' => $json->fraudlabspro_status,
+					'fraudlabspro_id' => $json->fraudlabspro_id,
+					'fraudlabspro_error_code' => $json->fraudlabspro_error_code,
+					'fraudlabspro_message' => $json->fraudlabspro_message,
+					'fraudlabspro_credits' => $json->fraudlabspro_credits,
+					'api_key' => get_option('woo_fraudlabspro_api_key')
+				)));
 
 				break;
 			}
 		}
 		if ((int)$json->fraudlabspro_score > get_option('woo_fraudlabspro_score') || $json->fraudlabspro_status == 'REJECT') {
-			$order->add_order_note(__('Marked as fraud by FraudLabs Pro', 'woocommerce'));
+			$order->add_order_note(__('Marked as fraud by FraudLabs Pro', $this->domain));
 
 			$woocommerce->cart->empty_cart();
 
@@ -204,7 +224,8 @@ class FraudLabsPro_WooCommerce {
 	}
 
 	public function render_fraud_report() {
-		global $wpdb;
+		wp_enqueue_script('jquery');
+
 		if (isset($_POST['approve'])) {
 			$request = array('key' => get_option('woo_fraudlabspro_api_key'),
 				'action' => 'APPROVE',
@@ -217,7 +238,10 @@ class FraudLabsPro_WooCommerce {
 			for($i = 0; $i < 3; $i++) {
 				if (is_null($json = json_decode(@file_get_contents($url))) === false) {
 					if ($json->fraudlabspro_error_code == '' || $json->fraudlabspro_error_code == '304') {
-						$wpdb->query('UPDATE `' . $this->table_name . '` SET `fraudlabspro_status`="APPROVE" WHERE `order_id`=' . $_GET['post']);
+						$result = get_post_meta($_GET['post'], '_fraudlabspro');
+						$row = json_decode($result[0]);
+						$row->fraudlabspro_status = 'APPROVE';
+						update_post_meta($_GET['post'], '_fraudlabspro', json_encode($row));
 					}
 					break;
 				}
@@ -234,16 +258,20 @@ class FraudLabsPro_WooCommerce {
 			for ($i = 0; $i < 3; $i++) {
 				if (is_null($json = json_decode(@file_get_contents($url))) === false) {
 					if ($json->fraudlabspro_error_code == '' || $json->fraudlabspro_error_code == '304') {
-						$wpdb->query('UPDATE `' . $this->table_name . '` SET `fraudlabspro_status`="REJECT" WHERE `order_id`=' . $_GET['post']);
+						$result = get_post_meta($_GET['post'], '_fraudlabspro');
+						$row = json_decode($result[0]);
+						$row->fraudlabspro_status = 'REJECT';
+						update_post_meta($_GET['post'], '_fraudlabspro', json_encode($row));
 					}
 					break;
 				}
 			}
 		}
-		$result = $wpdb->get_results('SELECT * FROM `' . $this->table_name . '` WHERE `order_id`=' . $_GET['post']);
-		echo '<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>';
+
+		$result = get_post_meta($_GET['post'], '_fraudlabspro');
+
 		if (count($result) > 0) {
-			$row = $result[0];
+			$row = json_decode($result[0]);
 			$table = '
 			<style type="text/css">
 				.fraudlabspro{border:1px solid #ccced7;border-collapse:collapse;margin:auto;padding:4px;table-layout:fixed;width:100%}
@@ -272,21 +300,21 @@ class FraudLabsPro_WooCommerce {
 						<p style="font-size:3em">' . $row->fraudlabspro_score . '</p></center>
 					</td>
 					<td>
-						<b>IP Address</b>
+						<b>' . __('IP Address', $this->domain) . '</b>
 						<p>' . $row->ip_address . '</p>
 					</td>
 					<td colspan="3">
-						<b>IP Location</b> <a href="javascript:;" title="Estimated location of the IP address.">[?]</a>
-						<p>' . implode(', ', $location) . ' <a href="http://www.geolocation.com/' . $row->ip_address . '" target="_blank">[Map]</a></p>
+						<b>' . __('IP Location', $this->domain) . '</b> <a href="javascript:;" title="' . __('Estimated location of the IP address.', $this->domain) . '">[?]</a>
+						<p>' . implode(', ', $location) . ' <a href="http://www.geolocation.com/' . $row->ip_address . '" target="_blank">[' . __('Map', $this->domain) . ']</a></p>
 					</td>
 				</tr>
 				<tr>
 					<td>
-						<b>IP Net Speed</b> <a href="javascript:;" title="Connection speed.">[?]</a>
+						<b>' . __('IP Net Speed', $this->domain) . '</b> <a href="javascript:;" title="' . __('Connection speed.', $this->domain) . '">[?]</a>
 						<p>' . $row->ip_netspeed . '</p>
 					</td>
 					<td colspan="3">
-						<b>IP ISP Name</b> <a href="javascript:;" title="Estimated ISP of the IP address.">[?]</a>
+						<b>' . __('IP ISP Name', $this->domain) . '</b> <a href="javascript:;" title="' . __('Estimated ISP of the IP address.', $this->domain) . '">[?]</a>
 						<p>' . $row->ip_isp_name . '</p>
 					</td>
 				</tr>';
@@ -306,78 +334,78 @@ class FraudLabsPro_WooCommerce {
 			$table .= '
 				<tr>
 					<td>
-						<b>IP Domain</b> <a href="javascript:;" title="Estimated domain name of the IP address.">[?]</a>
+						<b>' . __('IP Domain', $this->domain) . '</b> <a href="javascript:;" title="' . __('Estimated domain name of the IP address.', $this->domain) . '">[?]</a>
 						<p>' . $row->ip_domain . '</p>
 					</td>
 					<td>
-						<b>IP Usage Type</b> <a href="javascript:;" title="Estimated usage type of the IP address. ISP, Commercial, Residential.">[?]</a>
+						<b>' . __('IP Usage Type', $this->domain) . '</b> <a href="javascript:;" title="' . __('Estimated usage type of the IP address. ISP, Commercial, Residential.', $this->domain) . '">[?]</a>
 						<p>' . ((empty($row->ip_usage_type)) ? '-' : $row->ip_usage_type) . '</p>
 					</td>
 					<td>
-						<b>IP Time Zone</b> <a href="javascript:;" title="Estimated timezone of the IP address.">[?]</a>
+						<b>' . __('IP Time Zone', $this->domain) . '</b> <a href="javascript:;" title="' . __('Estimated timezone of the IP address.', $this->domain) . '">[?]</a>
 						<p>' . $row->ip_timezone . '</p>
 					</td>
 					<td>
-						<b>IP Distance</b> <a href="javascript:;" title="Distance from IP address to Billing Location.">[?]</a>
+						<b>' . __('IP Distance', $this->domain) . '</b> <a href="javascript:;" title="' . __('Distance from IP address to Billing Location.', $this->domain) . '">[?]</a>
 						<p>' . (($row->distance_in_km) ? ($row->distance_in_km . ' KM / ' . $row->distance_in_mile . ' Miles') : '-') . '</p>
 					</td>
 				</tr>
 				<tr>
 					<td rowspan="3">
-						<center><b>Status</b> <a href="javascript:;" title="FraudLabs Pro status.">[?]</a>
+						<center><b>' . __('Status', $this->domain) . '</b> <a href="javascript:;" title="' . __('FraudLabs Pro status.', $this->domain) . '">[?]</a>
 						<p style="color:#' . $color . ';font-size:1.333em;font-weight:bold">' . $row->fraudlabspro_status . '</p></center>
 					</td>
 					<td>
-						<b>IP Latitude</b> <a href="javascript:;" title="Estimated latitude of the IP address.">[?]</a>
+						<b>' . __('IP Latitude', $this->domain) . '</b> <a href="javascript:;" title="' . __('Estimated latitude of the IP address.', $this->domain) . '">[?]</a>
 						<p>' . $row->ip_latitude . '</p>
 					</td>
 					<td>
-						<b>IP Longitude</b> <a href="javascript:;" title="Estimated longitude of the IP address.">[?]</a>
+						<b>' . __('IP Longitude', $this->domain) . '</b> <a href="javascript:;" title="' . __('Estimated longitude of the IP address.', $this->domain) . '">[?]</a>
 						<p>' . $row->ip_longitude . '</p>
 					</td>
 					<td colspan="2">&nbsp;</td>
 				</tr>
 				<tr>
 					<td>
-						<b>High Risk</b> <a href="javascript:;" title="Whether IP address or billing address country is in the latest high risk list.">[?]</a>
+						<b>' . __('High Risk', $this->domain) . '</b> <a href="javascript:;" title="' . __('Whether IP address or billing address country is in the latest high risk list.', $this->domain) . '">[?]</a>
 						<p>' . (($row->is_high_risk_country == 'Y') ? 'Yes' : (($row->is_high_risk_country == 'N') ? 'No' : '-')) . '</p>
 					</td>
 					<td>
-						<b>Free Email</b> <a href="javascript:;" title="Whether e-mail is from free e-mail provider.">[?]</a>
+						<b>' . __('Free Email', $this->domain) . '</b> <a href="javascript:;" title="' . __('Whether e-mail is from free e-mail provider.', $this->domain) . '">[?]</a>
 						<p>' . (($row->is_free_email == 'Y') ? 'Yes' : (($row->is_free_email == 'N') ? 'No' : '-')) . '</p>
 					</td>
 					<td>
-						<b>Ship Forward</b> <a href="javascript:;" title="Whether shipping address is in database of known mail drops.">[?]</a>
+						<b>' . __('Ship Forward', $this->domain) . '</b> <a href="javascript:;" title="' . __('Whether shipping address is in database of known mail drops.', $this->domain) . '">[?]</a>
 						<p>' . (($row->is_address_ship_forward == 'Y') ? 'Yes' : (($row->is_address_ship_forward == 'N') ? 'No' : '-')) . '</p>
 					</td>
 					<td>
-						<b>Using Proxy</b> <a href="javascript:;" title="Whether IP address is from Anonymous Proxy Server.">[?]</a>
+						<b>' . __('Using Proxy', $this->domain) . '</b> <a href="javascript:;" title="' . __('Whether IP address is from Anonymous Proxy Server.', $this->domain) . '">[?]</a>
 						<p>' . (($row->is_proxy_ip_address == 'Y') ? 'Yes' : (($row->is_proxy_ip_address == 'N') ? 'No' : '-')) . '</p>
 					</td>
 				</tr>
 				<tr>
 					<td>
-						<b>BIN Found</b> <a href="javascript:;" title="Whether the BIN information matches our BIN list.">[?]</a>
+						<b>' . __('BIN Found', $this->domain) . '</b> <a href="javascript:;" title="' . __('Whether the BIN information matches our BIN list.', $this->domain) . '">[?]</a>
 						<p>' . (($row->is_bin_found == 'Y') ? 'Yes' : (($row->is_bin_found == 'N') ? 'No' : '-')) . '</p>
 					</td>
 					<td>
-						<b>Email Blacklist</b> <a href="javascript:;" title="Whether the email address is in our blacklist database.">[?]</a>
+						<b>' . __('Email Blacklist', $this->domain) . '</b> <a href="javascript:;" title="' . __('Whether the email address is in our blacklist database.', $this->domain) . '">[?]</a>
 						<p>' . (($row->is_email_blacklist == 'Y') ? 'Yes' : (($row->is_email_blacklist == 'N') ? 'No' : '-')) . '</p>
 					</td>
 					<td>
-						<b>Credit Card Blacklist</b> <a href="javascript:;" title="Whether the credit card is in our blacklist database.">[?]</a>
+						<b>' . __('Credit Card Blacklist', $this->domain) . '</b> <a href="javascript:;" title="' . __('Whether the credit card is in our blacklist database.', $this->domain) . '">[?]</a>
 						<p>' . (($row->is_credit_card_blacklist == 'Y') ? 'Yes' : (($row->is_credit_card_blacklist == 'N') ? 'No' : '-')) . '</p>
 					</td>
 					<td>&nbsp;</td>
 				</tr>
 				<tr>
 					<td colspan="5">
-						<b>Message</b> <a href="javascript:;" title="FraudLabs Web service message response.">[?]</a>
+						<b>' . __('Message', $this->domain) . '</b> <a href="javascript:;" title="' . __('FraudLabs Pro Web service message response.', $this->domain) . '">[?]</a>
 						<p>' . (($row->fraudlabspro_message) ? $row->fraudlabspro_error_code . ':' . $row->fraudlabspro_message : '-') . '</p>
 				</tr>
 				<tr>
 					<td colspan="5">
-						<b>Link</b>
+						<b>' . __('Link', $this->domain) . '</b>
 						<p><a href="http://www.fraudlabspro.com/merchant/transaction-details/' . $row->fraudlabspro_id . '" target="_blank">http://www.fraudlabspro.com/merchant/transaction-details/' . $row->fraudlabspro_id . '</a></p>
 				</tr>
 				</table>';
@@ -386,22 +414,22 @@ class FraudLabsPro_WooCommerce {
 				<form method="post">
 					<p align="center">
 					<input type="hidden" name="transactionId" value="' . $row->fraudlabspro_id . '" >
-					<input type="submit" name="approve" id="approve-order" value="Approve" style="padding:10px 5px; background:#22aa22; border:1px solid #ccc; min-width:100px; cursor: pointer;" />
-					<input type="submit" name="reject" id="reject-order" value="Reject" style="padding:10px 5px; background:#cd2122; border:1px solid #ccc; min-width:100px; cursor: pointer;" />
+					<input type="submit" name="approve" id="approve-order" value="' . __('Approve', $this->domain) . '" style="padding:10px 5px; background:#22aa22; border:1px solid #ccc; min-width:100px; cursor: pointer;" />
+					<input type="submit" name="reject" id="reject-order" value="' . __('Reject', $this->domain) . '" style="padding:10px 5px; background:#cd2122; border:1px solid #ccc; min-width:100px; cursor: pointer;" />
 					</p>
 				</form>';
 			}
 			echo '
 			<script>
-			$(function(){
-				$("#woocommerce-order-items").before(\'<div class="metabox-holder"><div class="postbox"><h3>FraudLabs Pro Details</h3><blockquote>' . preg_replace('/[\n]*/is', '', str_replace('\'', '\\\'', $table)) . '</blockquote></div></div>\');
+			jQuery(function(){
+				jQuery("#woocommerce-order-items").before(\'<div class="metabox-holder"><div class="postbox"><h3>FraudLabs Pro Details</h3><blockquote>' . preg_replace('/[\n]*/is', '', str_replace('\'', '\\\'', $table)) . '</blockquote></div></div>\');
 			});
 			</script>';
 		}else {
 			echo '
 			<script>
-			$(function(){
-				$("#woocommerce-order-items").before(\'<div class="metabox-holder"><div class="postbox"><h3>FraudLabs Pro Details</h3><blockquote>This order has not been screened by FraudLabs Pro.</blockquote></div></div>\');
+			jQuery(function(){
+				jQuery("#woocommerce-order-items").before(\'<div class="metabox-holder"><div class="postbox"><h3>FraudLabs Pro Details</h3><blockquote>This order has not been screened by FraudLabs Pro.</blockquote></div></div>\');
 			});
 			</script>';
 		}
@@ -417,74 +445,19 @@ class FraudLabsPro_WooCommerce {
 	}
 
 	public function admin_page() {
-		add_options_page('FraudLabs Pro (WooCommerce)', 'FraudLabs Pro (WooCommerce)', 10, 'woo-fraudlabs-pro', array(&$this, 'admin_options'));
+		add_submenu_page('woocommerce', __('FraudLabs Pro', $this->domain), __('FraudLabs Pro', $this->domain), 'manage_woocommerce', 'woo-fraudlabs-pro', array($this, 'admin_options'));
 	}
 
 	public function activate() {
-		global $wpdb;
-		$sql = 'CREATE TABLE `' . $wpdb->prefix . 'woocommerce_fraudlabspro' . '` (
-			`order_id` BIGINT(20) NOT NULL COLLATE \'utf8_bin\',
-			`is_country_match` CHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`is_high_risk_country` CHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`distance_in_km` VARCHAR(10) NOT NULL COLLATE \'utf8_bin\',
-			`distance_in_mile` VARCHAR(10) NOT NULL COLLATE \'utf8_bin\',
-			`ip_address` VARCHAR(15) NOT NULL COLLATE \'utf8_bin\',
-			`ip_country` VARCHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`ip_continent` VARCHAR(20) NOT NULL COLLATE \'utf8_bin\',
-			`ip_region` VARCHAR(21) NOT NULL COLLATE \'utf8_bin\',
-			`ip_city` VARCHAR(21) NOT NULL COLLATE \'utf8_bin\',
-			`ip_latitude` VARCHAR(21) NOT NULL COLLATE \'utf8_bin\',
-			`ip_longitude` VARCHAR(21) NOT NULL COLLATE \'utf8_bin\',
-			`ip_timezone` VARCHAR(10) NOT NULL COLLATE \'utf8_bin\',
-			`ip_elevation` VARCHAR(10) NOT NULL COLLATE \'utf8_bin\',
-			`ip_domain` VARCHAR(50) NOT NULL COLLATE \'utf8_bin\',
-			`ip_mobile_mnc` VARCHAR(100) NOT NULL COLLATE \'utf8_bin\',
-			`ip_mobile_mcc` VARCHAR(100) NOT NULL COLLATE \'utf8_bin\',
-			`ip_mobile_brand` VARCHAR(100) NOT NULL COLLATE \'utf8_bin\',
-			`ip_netspeed` VARCHAR(10) NOT NULL COLLATE \'utf8_bin\',
-			`ip_isp_name` VARCHAR(50) NOT NULL COLLATE \'utf8_bin\',
-			`ip_usage_type` VARCHAR(30) NOT NULL COLLATE \'utf8_bin\',
-			`is_free_email` CHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`is_new_domain_name` CHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`is_proxy_ip_address` CHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`is_bin_found` CHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`is_bin_country_match` CHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`is_bin_name_match` CHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`is_bin_phone_match` CHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`is_bin_prepaid` CHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`is_address_ship_forward` CHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`is_bill_ship_city_match` CHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`is_bill_ship_state_match` CHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`is_bill_ship_country_match` CHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`is_bill_ship_postal_match` CHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`is_ip_blacklist` CHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`is_email_blacklist` CHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`is_credit_card_blacklist` CHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`is_device_blacklist` CHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`is_user_blacklist` CHAR(2) NOT NULL COLLATE \'utf8_bin\',
-			`fraudlabspro_score` CHAR(3) NOT NULL COLLATE \'utf8_bin\',
-			`fraudlabspro_distribution` CHAR(3) NOT NULL COLLATE \'utf8_bin\',
-			`fraudlabspro_status` CHAR(10) NOT NULL COLLATE \'utf8_bin\',
-			`fraudlabspro_id` CHAR(15) NOT NULL COLLATE \'utf8_bin\',
-			`fraudlabspro_error_code` CHAR(3) NOT NULL COLLATE \'utf8_bin\',
-			`fraudlabspro_message` VARCHAR(50) NOT NULL COLLATE \'utf8_bin\',
-			`fraudlabspro_credits` VARCHAR(10) NOT NULL COLLATE \'utf8_bin\',
-			`api_key` CHAR(32) NOT NULL COLLATE \'utf8_bin\',
-			INDEX `idx_order_id` (`order_id`)
-		) COLLATE=\'utf8_bin\' ENGINE=MyISAM';
-		$wpdb->query($sql);
-
 		// Initial default settings
 		update_option('woo_fraudlabspro_enabled', 1);
 		update_option('woo_fraudlabspro_api_key', '');
 		update_option('woo_fraudlabspro_score', 60);
 		update_option('woo_fraudlabspro_test_ip', '');
-		update_option('woo_fraudlabspro_message', 'Thank you for shopping with us. Your order will be reviewed by us shortly.');
+		update_option('woo_fraudlabspro_message', __('Thank you for shopping with us. Your order will be reviewed by us shortly.', $this->domain));
 	}
 
 	public function uninstall() {
-		global $wpdb;
-		$wpdb->query('DROP TABLE `' . $wpdb->prefix . 'woocommerce_fraudlabspro' . '`');
 		// Remove all settings
 		delete_option('woo_fraudlabspro_enabled');
 		delete_option('woo_fraudlabspro_api_key');
@@ -493,15 +466,11 @@ class FraudLabsPro_WooCommerce {
 		delete_option('woo_fraudlabspro_message');
 	}
 }
-// Initial class
-$FraudLabsPro_WooCommerce = new FraudLabsPro_WooCommerce();
 
-register_activation_hook(__FILE__, array('FraudLabsPro_WooCommerce',
-		'activate'
-		));
-
-register_uninstall_hook(__FILE__, array('FraudLabsPro_WooCommerce',
-		'uninstall'
-		));
-
+// Only initialize plugin if WooCommerce is activated
+if(in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_option('active_plugins')))) {
+	$FraudLabsPro_WooCommerce = new FraudLabsPro_WooCommerce();
+	register_activation_hook(__FILE__, array('FraudLabsPro_WooCommerce', 'activate'));
+	register_uninstall_hook(__FILE__, array('FraudLabsPro_WooCommerce', 'uninstall'));
+}
 ?>
