@@ -454,7 +454,7 @@ class FraudLabsPro_WooCommerce {
 		update_option('woo_fraudlabspro_api_key', '');
 		update_option('woo_fraudlabspro_score', 60);
 		update_option('woo_fraudlabspro_test_ip', '');
-		update_option('woo_fraudlabspro_message', __('Thank you for shopping with us. Your order will be reviewed by us shortly.', $this->domain));
+		update_option('woo_fraudlabspro_message', __('Thank you for shopping with us. Your order will be reviewed by us shortly.', 'fraudlabs-pro-woocommerce'));
 	}
 
 	public function uninstall() {
