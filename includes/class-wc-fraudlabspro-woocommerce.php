@@ -56,7 +56,7 @@ class WC_Integration_FraudLabs_Pro extends WC_Integration {
 			'api_key' => array(
 				'title'             => __( 'API Key', 'woocommerce-fraudlabs-pro' ),
 				'type'              => 'text',
-				'description'       => __( 'API key to access FraudLabs Pro service.' ),
+				'description'       => __( 'API key to access FraudLabs Pro service. Get it from <a href="https://www.fraudlabspro.com/license" target="_blank">https://www.fraudlabspro.com/license</a>' ),
 				'desc_tip'          => true,
 				'default'           => ''
 			),

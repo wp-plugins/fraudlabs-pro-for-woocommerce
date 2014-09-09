@@ -70,7 +70,7 @@ class FraudLabsPro_WooCommerce {
 			echo '
 			<div id="message" class="error">
 				<p>
-					' . __( 'FraudLabs Pro setup is not complete. Please go to <a href="' . admin_url( '/admin.php?page=wc-settings&tab=integration' ) . '">setting page</a> to enter your API key.', 'woocommerce-fraudlabs-pro' ) . '
+					' . __( 'FraudLabs Pro setup is not complete. Please go to <a href="' . admin_url( '/admin.php?page=wc-settings&tab=integration&section=woocommerce-fraudlabs-pro' ) . '">setting page</a> to enter your API key.', 'woocommerce-fraudlabs-pro' ) . '
 				</p>
 			</div>
 			';
@@ -476,24 +476,13 @@ class FraudLabsPro_WooCommerce {
 	 * Send HTTP request.
 	 */
 	function http( $url ) {
-		$ch = curl_init( );
+		$response = wp_remote_get( $url );
 
-		curl_setopt( $ch, CURLOPT_FAILONERROR, 1 );
-		curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1 );
-		curl_setopt( $ch, CURLOPT_ENCODING , 'gzip, deflate' );
-		curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, 0 );
-		curl_setopt( $ch, CURLOPT_URL, $url );
-		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
-		curl_setopt( $ch, CURLOPT_USERAGENT, 'WooCommerce' );
-		curl_setopt( $ch, CURLOPT_TIMEOUT, 30 );
+		if ( is_wp_error( $response ) ) {
+			return false;
+		}
 
-		$result = curl_exec( $ch );
-
-		if( !curl_errno( $ch ) ) return $result;
-
-		curl_close( $ch );
-
-		return false;
+		return $response['body'];
 	}
 }
 
