@@ -36,7 +36,7 @@ Please visit us at [http://www.fraudlabspro.com](http://www.fraudlabspro.com "ht
 2. Activate the plugin through the 'Plugins' menu in WordPress.
 3. Enter the License Key at the 'Settings' section.
 
-=== How to enable the FraudLabs Pro feature ===
+= How to enable the FraudLabs Pro feature =
 1. Click on the WooCommerce->Settings page.
 2. Click on the Integration tab.
 3. Check the Enabled check box to enable it.
