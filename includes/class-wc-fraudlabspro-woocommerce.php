@@ -189,11 +189,19 @@ class WC_Integration_FraudLabs_Pro extends WC_Integration {
 				$paymentMode = 'others';
 		}
 
-		$client_ip = ( filter_var( $this->test_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6 ) ) ? $this->test_ip : $_SERVER['REMOTE_ADDR'];
+		$ip = $_SERVER['REMOTE_ADDR'];
+
+		if(isset($_SERVER['HTTP_CF_CONNECTING_IP']) && filter_var($_SERVER['HTTP_CF_CONNECTING_IP'], FILTER_VALIDATE_IP)){
+			$ip = $_SERVER['HTTP_CF_CONNECTING_IP'];
+		}
+
+		if(isset($_SERVER['HTTP_X_FORWARDED_FOR']) && filter_var($_SERVER['HTTP_X_FORWARDED_FOR'], FILTER_VALIDATE_IP)){
+			$ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+		}
 
 		$request = array( 'key' => $this->api_key ,
 			'format' => 'json',
-			'ip' => $client_ip,
+			'ip' => ( filter_var( $this->test_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6 ) ) ? $this->test_ip : $ip,
 			'bill_city' => $customer->get_city( ),
 			'bill_state' => $customer->get_state( ),
 			'bill_zip_code' => $customer->get_postcode( ),

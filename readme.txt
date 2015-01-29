@@ -4,7 +4,7 @@ Donate link: http://www.fraudlabspro.com
 Tags: fraud, ecommerce, woocommerce
 Requires at least: 2.0
 Tested up to: 4.1
-Stable tag: 2.1.0
+Stable tag: 2.1.1
 
 Description: This plugin is an add-on for WooCommerce plugin that help you to screen your order transaction, such as credit card transaction, for online fraud.
 
@@ -28,6 +28,7 @@ Please visit us at [http://www.fraudlabspro.com](http://www.fraudlabspro.com "ht
 * 1.1   Fixed to match WooCommerce standards.
 * 2.0.0 Fully integrated into WooCommerce.
 * 2.1.0 Fixed issue cannot read API key value.
+* 2.1.1 Detect client IP correctly if WordPress installed behind load balancer or proxy.
 
 
 == Installation ==
