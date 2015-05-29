@@ -3,7 +3,7 @@ Contributors: FraudLabs Pro
 Donate link: http://www.fraudlabspro.com
 Tags: fraud, ecommerce, woocommerce
 Requires at least: 2.0
-Tested up to: 4.1
+Tested up to: 4.2
 Stable tag: 2.1.1
 
 Description: This plugin is an add-on for WooCommerce plugin that help you to screen your order transaction, such as credit card transaction, for online fraud.
