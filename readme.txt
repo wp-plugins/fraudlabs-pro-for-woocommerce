@@ -3,8 +3,8 @@ Contributors: FraudLabs Pro
 Donate link: http://www.fraudlabspro.com
 Tags: fraud, ecommerce, woocommerce
 Requires at least: 2.0
-Tested up to: 4.2
-Stable tag: 2.1.1
+Tested up to: 4.3
+Stable tag: 2.2.0
 
 Description: This plugin is an add-on for WooCommerce plugin that help you to screen your order transaction, such as credit card transaction, for online fraud.
 
@@ -24,11 +24,12 @@ Please visit us at [http://www.fraudlabspro.com](http://www.fraudlabspro.com "ht
 
 == Changelog ==
 
-* 1.0   First release.
-* 1.1   Fixed to match WooCommerce standards.
-* 2.0.0 Fully integrated into WooCommerce.
-* 2.1.0 Fixed issue cannot read API key value.
-* 2.1.1 Detect client IP correctly if WordPress installed behind load balancer or proxy.
+* 1.0	First release.
+* 1.1	Fixed to match WooCommerce standards.
+* 2.0.0	Fully integrated into WooCommerce.
+* 2.1.0	Fixed issue cannot read API key value.
+* 2.1.1	Detect client IP correctly if WordPress installed behind load balancer or proxy.
+* 2.2.0	Added email notification with fraud result to store owner.
 
 
 == Installation ==
@@ -41,8 +42,7 @@ Please visit us at [http://www.fraudlabspro.com](http://www.fraudlabspro.com "ht
 1. Click on the WooCommerce->Settings page.
 2. Click on the Integration tab.
 3. Check the Enabled check box to enable it.
-4. Enter your FraudLabs Pro API Key. You can sign up for a free API key at http://www.fraudlabspro.com/sign-up. 
+4. Enter your FraudLabs Pro API Key. You can sign up for a free API key at http://www.fraudlabspro.com/sign-up.
 5. Click on the Save Settings button.
-  
-Fore more information, please visit [http://www.fraudlabspro.com](http://www.fraudlabspro.com/supported-platforms-woocommerce "http://www.fraudlabspro.com")  
 
+Fore more information, please visit [http://www.fraudlabspro.com](http://www.fraudlabspro.com/supported-platforms-woocommerce "http://www.fraudlabspro.com")

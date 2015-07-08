@@ -5,7 +5,7 @@
  * Description: This plugin is an add-on for WooCommerce plugin that help you to screen your order transaction, such as credit card transaction, for online fraud.
  * Author: FraudLabs Pro
  * Author URI: http://www.fraudlabspro.com/
- * Version: 2.1.1
+ * Version: 2.2.0
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,7 +60,6 @@ class FraudLabsPro_WooCommerce {
 	}
 
 }
-
 
 // Only initialize plugin if WooCommerce is activated
 if( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
