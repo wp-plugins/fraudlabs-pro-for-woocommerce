@@ -213,9 +213,6 @@ class WC_Integration_FraudLabs_Pro extends WC_Integration {
 		if( isset( $_SERVER['HTTP_CF_CONNECTING_IP'] ) && filter_var( $_SERVER['HTTP_CF_CONNECTING_IP'], FILTER_VALIDATE_IP ) )
 			$client_ip = $_SERVER['HTTP_CF_CONNECTING_IP'];
 
-		if( isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) && filter_var( $_SERVER['HTTP_X_FORWARDED_FOR'], FILTER_VALIDATE_IP ) )
-			$client_ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
-
 		$url = 'https://api.fraudlabspro.com/v1/order/screen?' . http_build_query( array(
 			'key'			=> $this->api_key ,
 			'format'		=> 'json',
